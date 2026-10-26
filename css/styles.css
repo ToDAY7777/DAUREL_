@@ -1,0 +1,54 @@
+:root{--ink:#2a1a3e;--lilac:#d6c6f5;--lilac-soft:#f0eafc;--blush:#ffd9d2;--mint:#c4ead9;--sun:#ffc83d;--bg:#fffdfc;--muted:#76698a;--line:#e8e0f3;--wa:#1fa855}
+*{box-sizing:border-box}
+body{margin:0;font-family:"DM Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+img{max-width:100%;display:block}
+.muted{color:var(--muted);font-size:.9rem}
+.topbar{background:var(--ink);color:#fff;text-align:center;font-size:.85rem;padding:.55rem 1rem}
+.head{display:flex;align-items:center;gap:1rem;padding:.9rem clamp(1rem,4vw,3rem);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.logo{font:800 2rem/1 "Bricolage Grotesque",sans-serif;color:var(--ink);text-decoration:none;letter-spacing:-.03em}
+.head input[type=search]{flex:1;max-width:420px;margin-left:auto;padding:.65rem 1rem;border:1px solid var(--line);border-radius:99px;background:var(--lilac-soft);font:inherit}
+.admin .head .btn{margin-left:auto}
+.btn{display:inline-block;border:0;background:var(--ink);color:#fff;padding:.8rem 1.4rem;border-radius:99px;font:700 1rem "DM Sans";cursor:pointer;text-decoration:none;text-align:center}
+.btn.small{padding:.5rem 1rem;font-size:.9rem}.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.btn.danger{background:#b3261e}.btn.wa{background:var(--wa);display:block;margin-top:1.2rem}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.hero{background:linear-gradient(120deg,var(--lilac),var(--blush) 60%,var(--mint));padding:clamp(2.5rem,8vw,5.5rem) clamp(1rem,4vw,3rem)}
+.hero h1{font:800 clamp(2.2rem,7vw,4.8rem)/1 "Bricolage Grotesque",sans-serif;letter-spacing:-.035em;margin:0 0 .8rem;max-width:12ch}
+.hero p{margin:0;font-size:1.15rem;max-width:36ch}
+.chips{display:flex;gap:.6rem;overflow-x:auto;padding:1.2rem clamp(1rem,4vw,3rem)}
+.chip{flex:none;border:1.5px solid var(--ink);background:transparent;color:var(--ink);padding:.5rem 1.1rem;border-radius:99px;font:500 .95rem "DM Sans";cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.6rem 1.2rem;padding:0 clamp(1rem,4vw,3rem) 3rem}
+.card{cursor:pointer}.card h3{font:500 .95rem "DM Sans";margin:.7rem 0 .15rem}
+.card-img{position:relative;aspect-ratio:4/5;background:var(--lilac-soft);overflow:hidden}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.card:hover img{transform:scale(1.04)}
+.badge{position:absolute;top:.7rem;left:.7rem;z-index:1;background:var(--sun);color:var(--ink);font:800 .72rem "Bricolage Grotesque";padding:.3rem .6rem;border-radius:99px}
+.price{font-weight:700;margin:0}.price.big{font-size:1.6rem}
+.empty{grid-column:1/-1;color:var(--muted);padding:2rem 0}
+.foot{background:var(--lilac-soft);padding:2rem clamp(1rem,4vw,3rem);text-align:center}.foot p{margin:.2rem}
+dialog{border:0;border-radius:20px;padding:0;width:min(900px,94vw);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(42,26,62,.6)}
+.close{position:absolute;right:.8rem;top:.5rem;border:0;background:#fff;border-radius:50%;width:2.2rem;height:2.2rem;font-size:1.5rem;cursor:pointer;z-index:2}
+.modal-body{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;padding:1.5rem}
+.gallery #main-img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:12px}
+.thumbs{display:flex;gap:.5rem;margin-top:.6rem}.thumbs img{width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer}
+.info h2{font:800 1.8rem/1.1 "Bricolage Grotesque";margin:.2rem 0 .6rem}.desc{white-space:pre-line}
+@media(max-width:700px){.modal-body{grid-template-columns:1fr}.head input[type=search]{display:none}.head .btn{margin-left:auto}}
+.admin-grid{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:1.5rem;padding:1.5rem clamp(1rem,4vw,3rem);align-items:start}
+@media(max-width:800px){.admin-grid{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.4rem}.panel.narrow{max-width:400px;margin:3rem auto}
+.panel h2{margin:0 0 1rem;font:800 1.4rem "Bricolage Grotesque"}
+label{display:block;font-weight:500;font-size:.9rem;margin-bottom:.9rem}
+label input:not([type=checkbox]),select,textarea{display:block;width:100%;margin-top:.3rem;padding:.65rem .8rem;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.check{display:flex;gap:.5rem;align-items:center}.two{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.previews{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1rem}
+.prev{position:relative}.prev img{width:80px;height:80px;object-fit:cover;border-radius:10px}
+.prev button{position:absolute;top:-6px;right:-6px;border:0;background:var(--ink);color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer}
+.prev em{position:absolute;bottom:4px;left:4px;background:var(--sun);font-size:.65rem;font-style:normal;padding:0 .35rem;border-radius:99px}
+.list{list-style:none;margin:0;padding:0}
+.row{display:grid;grid-template-columns:56px 1fr auto auto;gap:.8rem;align-items:center;padding:.7rem 0;border-bottom:1px solid var(--line)}
+.row img{width:56px;height:56px;object-fit:cover;border-radius:10px}.row.off{opacity:.55}
+.toast{position:fixed;bottom:1.2rem;left:50%;transform:translate(-50%,200%);background:var(--ink);color:#fff;padding:.8rem 1.4rem;border-radius:99px;transition:transform .25s}
+.toast.show{transform:translate(-50%,0)}.toast.bad{background:#b3261e}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
