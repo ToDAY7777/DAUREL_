@@ -2,6 +2,7 @@
 
 Sitio estático (HTML + JS) para GitHub Pages. Datos y fotos en Supabase (gratis).
 
+
 ## 1. Crear Supabase
 1. Crea cuenta y proyecto en https://supabase.com
 2. **SQL Editor** → pega y ejecuta `supabase/setup.sql`
