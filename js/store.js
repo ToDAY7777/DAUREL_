@@ -41,6 +41,44 @@ function openModal(p) {
   $("#modal").showModal();
 }
 
+
+/* ===== Carrusel de rueda: usa productos cuya foto principal es PNG (recorte sin fondo) ===== */
+function initWheel() {
+  const items = products.filter(p => /\.png(\?|$)/i.test(p.images?.[0] || "")).slice(0, 8);
+  const sec = $("#wheel-sec");
+  if (items.length < 2) { sec.hidden = true; return; }
+  sec.hidden = false;
+  const wheel = $("#wheel"), n = items.length;
+  wheel.innerHTML = items.map((p, i) =>
+    `<div class="w-item" style="--i:${i}" data-i="${i}" role="button" tabindex="0" aria-label="${esc(p.title)}"><img src="${esc(p.images[0])}" alt="" draggable="false"></div>`).join("");
+  const els = [...wheel.children];
+  let a = 0, dir = 1, timer, startX = 0, moved = false;
+
+  function go(i) {
+    a = Math.max(0, Math.min(n - 1, i));
+    sec.style.setProperty("--a", a);
+    els.forEach((el, k) => { el.style.setProperty("--d", Math.abs(k - a)); el.classList.toggle("on", k === a); });
+    $("#w-title").textContent = items[a].title;
+    $("#w-price").textContent = money(items[a].price);
+  }
+  const tick = () => { if (a === n - 1) dir = -1; if (a === 0) dir = 1; go(a + dir); };
+  const start = () => { if (!matchMedia("(prefers-reduced-motion: reduce)").matches) { stop(); timer = setInterval(tick, 4200); } };
+  const stop = () => clearInterval(timer);
+
+  $("#w-prev").onclick = () => go(a - 1);
+  $("#w-next").onclick = () => go(a + 1);
+  $("#w-btn").onclick = () => openModal(items[a]);
+  wheel.addEventListener("click", e => {
+    const el = e.target.closest(".w-item"); if (!el || moved) return;
+    +el.dataset.i === a ? openModal(items[a]) : go(+el.dataset.i);
+  });
+  sec.addEventListener("keydown", e => { if (e.key === "ArrowLeft") go(a - 1); if (e.key === "ArrowRight") go(a + 1); });
+  sec.addEventListener("pointerdown", e => { startX = e.clientX; moved = false; });
+  sec.addEventListener("pointerup", e => { const dx = e.clientX - startX; if (Math.abs(dx) > 40) { moved = true; go(a + (dx < 0 ? 1 : -1)); setTimeout(() => moved = false, 50); } });
+  sec.addEventListener("pointerenter", stop); sec.addEventListener("pointerleave", start); sec.addEventListener("focusin", stop);
+  go(0); start();
+}
+
 async function init() {
   $("#chips").innerHTML = ["Todo", ...CATEGORIES].map(c => `<button class="chip" data-cat="${c}">${c}</button>`).join("");
   $("#chips").addEventListener("click", e => { if (e.target.dataset.cat) { cat = e.target.dataset.cat; render(); } });
@@ -50,7 +88,7 @@ async function init() {
   $("#modal").addEventListener("click", e => { if (e.target.id === "modal" || e.target.closest(".close")) $("#modal").close(); });
   $("#modal-body").addEventListener("click", e => { if (e.target.closest(".thumbs") && e.target.tagName === "IMG") $("#main-img").src = e.target.src; });
   $("#wa-top").href = `https://wa.me/${WHATSAPP}`;
-  try { products = await listProducts(); render(); }
+  try { products = await listProducts(); render(); initWheel(); }
   catch (e) { console.error(e); $("#grid").innerHTML = `<p class="empty">No pudimos cargar los productos. Revisa tu conexión e intenta de nuevo.</p>`; }
 }
 init();
