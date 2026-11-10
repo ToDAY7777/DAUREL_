@@ -42,41 +42,54 @@ function openModal(p) {
 }
 
 
-/* ===== Carrusel de rueda: usa productos cuya foto principal es PNG (recorte sin fondo) ===== */
-function initWheel() {
-  const items = products.filter(p => /\.png(\?|$)/i.test(p.images?.[0] || "")).slice(0, 8);
-  const sec = $("#wheel-sec");
-  if (items.length < 2) { sec.hidden = true; return; }
+/* ===== Escenario de productos (carrusel interactivo) ===== */
+function initStage() {
+  const items = products.slice(0, 10), sec = $("#stage");
+  if (!items.length) { sec.hidden = true; return; }
   sec.hidden = false;
-  const wheel = $("#wheel"), n = items.length;
-  wheel.innerHTML = items.map((p, i) =>
-    `<div class="w-item" style="--i:${i}" data-i="${i}" role="button" tabindex="0" aria-label="${esc(p.title)}"><img src="${esc(p.images[0])}" alt="" draggable="false"></div>`).join("");
-  const els = [...wheel.children];
-  let a = 0, dir = 1, timer, startX = 0, moved = false;
+  document.querySelector(".hero").hidden = true;
+  const n = items.length;
+  $("#st-track").innerHTML = items.map((p, i) => {
+    const cut = /\.png(\?|$)/i.test(p.images?.[0] || "");
+    return `<div class="st-item ${cut ? "cut" : "photo"}" data-i="${i}" role="button" tabindex="0" aria-label="${esc(p.title)}"><img src="${esc(p.images?.[0] || "")}" alt="" draggable="false"></div>`;
+  }).join("");
+  const els = [...$("#st-track").children];
+  let a = 0, startX = 0, moved = false, lock = false;
 
   function go(i) {
     a = Math.max(0, Math.min(n - 1, i));
-    sec.style.setProperty("--a", a);
-    els.forEach((el, k) => { el.style.setProperty("--d", Math.abs(k - a)); el.classList.toggle("on", k === a); });
-    $("#w-title").textContent = items[a].title;
-    $("#w-price").textContent = money(items[a].price);
+    els.forEach((el, k) => {
+      const o = k - a, ao = Math.abs(o);
+      el.style.setProperty("--o", o);
+      el.style.setProperty("--s", Math.max(.5, 1.2 - ao * .24));
+      el.style.setProperty("--op", ao > 3 ? 0 : 1 - ao * .22);
+      el.style.setProperty("--z", 10 - ao);
+      el.style.setProperty("--pe", ao > 3 ? "none" : "auto");
+      el.classList.toggle("on", k === a);
+    });
+    $("#st-title").textContent = items[a].title;
+    $("#st-price").textContent = money(items[a].price);
+    const t = $("#st-thumb"); t.style.width = 100 / n + "%"; t.style.left = (a * 100 / n) + "%";
   }
-  const tick = () => { if (a === n - 1) dir = -1; if (a === 0) dir = 1; go(a + dir); };
-  const start = () => { if (!matchMedia("(prefers-reduced-motion: reduce)").matches) { stop(); timer = setInterval(tick, 4200); } };
-  const stop = () => clearInterval(timer);
-
-  $("#w-prev").onclick = () => go(a - 1);
-  $("#w-next").onclick = () => go(a + 1);
-  $("#w-btn").onclick = () => openModal(items[a]);
-  wheel.addEventListener("click", e => {
-    const el = e.target.closest(".w-item"); if (!el || moved) return;
+  if (n < 2) document.querySelectorAll(".st-arrow,.st-bar").forEach(e => e.hidden = true);
+  $("#st-prev").onclick = () => go(a - 1);
+  $("#st-next").onclick = () => go(a + 1);
+  $("#st-btn").onclick = () => openModal(items[a]);
+  $("#st-track").addEventListener("click", e => {
+    const el = e.target.closest(".st-item"); if (!el || moved) return;
     +el.dataset.i === a ? openModal(items[a]) : go(+el.dataset.i);
   });
   sec.addEventListener("keydown", e => { if (e.key === "ArrowLeft") go(a - 1); if (e.key === "ArrowRight") go(a + 1); });
   sec.addEventListener("pointerdown", e => { startX = e.clientX; moved = false; });
-  sec.addEventListener("pointerup", e => { const dx = e.clientX - startX; if (Math.abs(dx) > 40) { moved = true; go(a + (dx < 0 ? 1 : -1)); setTimeout(() => moved = false, 50); } });
-  sec.addEventListener("pointerenter", stop); sec.addEventListener("pointerleave", start); sec.addEventListener("focusin", stop);
-  go(0); start();
+  sec.addEventListener("pointerup", e => { const dx = e.clientX - startX; if (Math.abs(dx) > 40) { moved = true; go(a + (dx < 0 ? 1 : -1)); setTimeout(() => moved = false, 60); } });
+  sec.addEventListener("pointermove", e => { const r = sec.getBoundingClientRect(); sec.style.setProperty("--px", ((e.clientX - r.left) / r.width * 2 - 1).toFixed(2)); });
+  sec.addEventListener("wheel", e => {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 20) {
+      e.preventDefault();
+      if (!lock) { go(a + (e.deltaX > 0 ? 1 : -1)); lock = true; setTimeout(() => lock = false, 450); }
+    }
+  }, { passive: false });
+  go(0);
 }
 
 async function init() {
@@ -88,7 +101,7 @@ async function init() {
   $("#modal").addEventListener("click", e => { if (e.target.id === "modal" || e.target.closest(".close")) $("#modal").close(); });
   $("#modal-body").addEventListener("click", e => { if (e.target.closest(".thumbs") && e.target.tagName === "IMG") $("#main-img").src = e.target.src; });
   $("#wa-top").href = `https://wa.me/${WHATSAPP}`;
-  try { products = await listProducts(); render(); initWheel(); }
+  try { products = await listProducts(); render(); initStage(); }
   catch (e) { console.error(e); $("#grid").innerHTML = `<p class="empty">No pudimos cargar los productos. Revisa tu conexión e intenta de nuevo.</p>`; }
 }
 init();
