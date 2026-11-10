@@ -54,10 +54,13 @@ function initStage() {
     return `<div class="st-item ${cut ? "cut" : "photo"}" data-i="${i}" role="button" tabindex="0" aria-label="${esc(p.title)}"><img src="${esc(p.images?.[0] || "")}" alt="" draggable="false"></div>`;
   }).join("");
   const els = [...$("#st-track").children];
-  let a = 0, startX = 0, moved = false, lock = false;
+  let a = 0, startX = 0, moved = false, lock = false, started = false;
 
   function go(i) {
+    const prev = a;
     a = Math.max(0, Math.min(n - 1, i));
+    if (started && a !== prev) { const f = $("#st-floor"); f.classList.remove("flash"); void f.offsetWidth; f.classList.add("flash"); }
+    started = true;
     els.forEach((el, k) => {
       const o = k - a, ao = Math.abs(o);
       el.style.setProperty("--o", o);
@@ -82,7 +85,6 @@ function initStage() {
   sec.addEventListener("keydown", e => { if (e.key === "ArrowLeft") go(a - 1); if (e.key === "ArrowRight") go(a + 1); });
   sec.addEventListener("pointerdown", e => { startX = e.clientX; moved = false; });
   sec.addEventListener("pointerup", e => { const dx = e.clientX - startX; if (Math.abs(dx) > 40) { moved = true; go(a + (dx < 0 ? 1 : -1)); setTimeout(() => moved = false, 60); } });
-  sec.addEventListener("pointermove", e => { const r = sec.getBoundingClientRect(); sec.style.setProperty("--px", ((e.clientX - r.left) / r.width * 2 - 1).toFixed(2)); });
   sec.addEventListener("wheel", e => {
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 20) {
       e.preventDefault();
