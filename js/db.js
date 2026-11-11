@@ -34,5 +34,5 @@ export async function uploadImage(file) {
   return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
-export const money = n => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
+export const money = n => "$" + Number(n).toLocaleString("es-MX", { maximumFractionDigits: 2 }) + " MX";
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
