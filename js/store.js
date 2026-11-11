@@ -97,6 +97,51 @@ function initStage() {
   go(0);
 }
 
+/* ===== Carrusel de tarjetas: Decoración y Recuerdos ===== */
+const SHOWCASE = ["Decoración", "Recuerdos"];
+function initShowcase() {
+  const sec = $("#showcase"), track = $("#sc-track");
+  const list = products.filter(p => SHOWCASE.includes(p.category));
+  if (!list.length) { sec.hidden = true; return; }
+  sec.hidden = false;
+  track.innerHTML = list.map(p => {
+    const cut = /\.png(\?|$)/i.test(p.images?.[0] || "");
+    return `<article class="sc-card" data-id="${p.id}" tabindex="0" role="button" aria-label="${esc(p.title)}">
+      <div class="sc-img ${cut ? "cut" : "photo"}"><img src="${esc(p.images?.[0] || "")}" alt="" loading="lazy" draggable="false"></div>
+      <h3>${esc(p.title)}</h3><span class="sc-btn">Ver detalles</span></article>`;
+  }).join("");
+
+  const prev = $("#sc-prev"), next = $("#sc-next");
+  const step = () => { const c = track.querySelector(".sc-card"); return c ? c.offsetWidth + (parseFloat(getComputedStyle(track).columnGap) || 16) : 300; };
+  const sync = () => {
+    const max = track.scrollWidth - track.clientWidth;
+    prev.hidden = next.hidden = max < 8;
+    prev.disabled = track.scrollLeft < 4; next.disabled = track.scrollLeft > max - 4;
+  };
+  prev.onclick = () => track.scrollBy({ left: -step(), behavior: "smooth" });
+  next.onclick = () => track.scrollBy({ left: step(), behavior: "smooth" });
+  track.addEventListener("scroll", sync, { passive: true });
+  addEventListener("resize", sync); sync();
+
+  // arrastrar con el mouse (en celular el dedo ya desliza solo)
+  let down = false, x0 = 0, s0 = 0, moved = false;
+  track.addEventListener("pointerdown", e => { if (e.pointerType !== "mouse") return; down = true; moved = false; x0 = e.clientX; s0 = track.scrollLeft; });
+  track.addEventListener("pointermove", e => {
+    if (!down) return;
+    const dx = e.clientX - x0;
+    if (Math.abs(dx) > 5) { moved = true; track.classList.add("drag"); }
+    if (moved) track.scrollLeft = s0 - dx;
+  });
+  const end = () => { if (!down) return; down = false; track.classList.remove("drag"); setTimeout(() => moved = false, 60); };
+  track.addEventListener("pointerup", end); track.addEventListener("pointerleave", end);
+
+  track.addEventListener("click", e => {
+    const c = e.target.closest(".sc-card"); if (!c || moved) return;
+    openModal(list.find(p => p.id === c.dataset.id));
+  });
+  track.addEventListener("keydown", e => { if (e.key === "Enter") e.target.click(); });
+}
+
 async function init() {
   const toGrid = () => $("#grid").scrollIntoView({ behavior: "smooth", block: "start" });
   $("#cats").innerHTML = ["Todo", ...CATEGORIES].map(c => `<button class="cat" data-cat="${c}">${c}</button>`).join("");
@@ -111,7 +156,7 @@ async function init() {
   const head = $("#site-head");
   const onScroll = () => head.classList.toggle("solid", scrollY > 20);
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
-  try { products = await listProducts(); render(); initStage(); }
+  try { products = await listProducts(); render(); initStage(); initShowcase(); }
   catch (e) { console.error(e); $("#grid").innerHTML = `<p class="empty">No pudimos cargar los productos. Revisa tu conexión e intenta de nuevo.</p>`; }
 }
 init();
