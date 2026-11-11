@@ -4,6 +4,8 @@ import { WHATSAPP, CATEGORIES } from "./config.js";
 const $ = s => document.querySelector(s);
 let products = [], cat = "Todo", term = "";
 
+const waLink = p => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hola Daurel, me interesa: ${p.title} (${money(p.price)}). ¿Está disponible?`)}`;
+
 function card(p) {
   return `<article class="card" data-id="${p.id}" tabindex="0" role="button" aria-label="${esc(p.title)}">
     <div class="card-img">
@@ -21,11 +23,10 @@ function render() {
     (p.title + " " + (p.description || "")).toLowerCase().includes(term));
   $("#grid").innerHTML = list.length ? list.map(card).join("")
     : `<p class="empty">No encontramos productos con ese filtro. Prueba otra categoría o escríbenos por WhatsApp para pedirlo a tu gusto.</p>`;
-  document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cat === cat));
+  document.querySelectorAll(".cat").forEach(c => c.setAttribute("aria-pressed", c.dataset.cat === cat));
 }
 
 function openModal(p) {
-  const msg = encodeURIComponent(`Hola Daurel, me interesa: ${p.title} (${money(p.price)}). ¿Está disponible?`);
   $("#modal-body").innerHTML = `
     <div class="gallery">
       <img id="main-img" src="${esc(p.images?.[0] || "")}" alt="${esc(p.title)}">
@@ -36,52 +37,54 @@ function openModal(p) {
       <h2>${esc(p.title)}</h2>
       <p class="price big">${money(p.price)}</p>
       <p class="desc">${esc(p.description)}</p>
-      <a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${WHATSAPP}?text=${msg}">Pedir por WhatsApp</a>
+      <a class="btn wa" target="_blank" rel="noopener" href="${waLink(p)}">Pedir por WhatsApp</a>
     </div>`;
   $("#modal").showModal();
 }
 
-
-/* ===== Escenario de productos (carrusel interactivo) ===== */
+/* ===== Carrusel infinito: se ven 3 (centro grande + lados) ===== */
 function initStage() {
-  const items = products.slice(0, 10), sec = $("#stage");
-  if (!items.length) { sec.hidden = true; return; }
+  const items = products.slice(0, 12), n = items.length, sec = $("#stage");
+  if (!n) { sec.hidden = true; return; }
   sec.hidden = false;
   document.querySelector(".hero").hidden = true;
-  const n = items.length;
-  $("#st-track").innerHTML = items.map((p, i) => {
-    const cut = /\.png(\?|$)/i.test(p.images?.[0] || "");
-    return `<div class="st-item ${cut ? "cut" : "photo"}" data-i="${i}" role="button" tabindex="0" aria-label="${esc(p.title)}"><img src="${esc(p.images?.[0] || "")}" alt="" draggable="false"></div>`;
+
+  // anillo de al menos 5 elementos para que el giro sea continuo (se repiten si hay pocos productos)
+  const m = n === 1 ? 1 : n >= 5 ? n : n * Math.ceil(5 / n), h = Math.floor(m / 2);
+  const at = k => items[k % n];
+  $("#st-track").innerHTML = Array.from({ length: m }, (_, k) => {
+    const p = at(k), cut = /\.png(\?|$)/i.test(p.images?.[0] || "");
+    return `<div class="st-item ${cut ? "cut" : "photo"}" role="button" tabindex="0" aria-label="${esc(p.title)}"><img src="${esc(p.images?.[0] || "")}" alt="" draggable="false"></div>`;
   }).join("");
-  const els = [...$("#st-track").children];
+  const els = [...$("#st-track").children], info = $("#st-info");
   let a = 0, startX = 0, moved = false, lock = false, started = false;
 
-  function go(i) {
+  function go(k) {
     const prev = a;
-    a = Math.max(0, Math.min(n - 1, i));
-    if (started && a !== prev) { const f = $("#st-floor"); f.classList.remove("flash"); void f.offsetWidth; f.classList.add("flash"); }
-    started = true;
-    els.forEach((el, k) => {
-      const o = k - a, ao = Math.abs(o);
+    a = ((k % m) + m) % m;
+    els.forEach((el, i) => {
+      const o = (((i - a + h) % m) + m) % m - h, ao = Math.abs(o);
       el.style.setProperty("--o", o);
-      el.style.setProperty("--s", Math.max(.5, 1.2 - ao * .24));
-      el.style.setProperty("--op", ao > 3 ? 0 : 1 - ao * .22);
+      el.style.setProperty("--ao", ao);
+      el.style.setProperty("--s", ao === 0 ? 1 : .8);
+      el.style.setProperty("--op", ao <= 1 ? 1 : 0);
       el.style.setProperty("--z", 10 - ao);
-      el.style.setProperty("--pe", ao > 3 ? "none" : "auto");
-      el.classList.toggle("on", k === a);
+      el.style.setProperty("--pe", ao <= 1 ? "auto" : "none");
     });
-    $("#st-title").textContent = items[a].title;
-    $("#st-price").textContent = money(items[a].price);
-    const t = $("#st-thumb"); t.style.width = 100 / n + "%"; t.style.left = (a * 100 / n) + "%";
+    const p = at(a);
+    $("#st-title").textContent = p.title;
+    $("#st-price").textContent = money(p.price);
+    $("#st-buy").href = waLink(p);
+    if (started && a !== prev) { info.classList.remove("swap"); void info.offsetWidth; info.classList.add("swap"); }
+    started = true;
   }
-  if (n < 2) document.querySelectorAll(".st-arrow,.st-bar").forEach(e => e.hidden = true);
-  $("#st-prev").onclick = () => go(a - 1);
-  $("#st-next").onclick = () => go(a + 1);
-  $("#st-btn").onclick = () => openModal(items[a]);
+
   $("#st-track").addEventListener("click", e => {
     const el = e.target.closest(".st-item"); if (!el || moved) return;
-    +el.dataset.i === a ? openModal(items[a]) : go(+el.dataset.i);
+    const o = +el.style.getPropertyValue("--o");
+    o === 0 ? openModal(at(a)) : go(a + o);
   });
+  $("#st-track").addEventListener("keydown", e => { if (e.key === "Enter") e.target.click(); });
   sec.addEventListener("keydown", e => { if (e.key === "ArrowLeft") go(a - 1); if (e.key === "ArrowRight") go(a + 1); });
   sec.addEventListener("pointerdown", e => { startX = e.clientX; moved = false; });
   sec.addEventListener("pointerup", e => { const dx = e.clientX - startX; if (Math.abs(dx) > 40) { moved = true; go(a + (dx < 0 ? 1 : -1)); setTimeout(() => moved = false, 60); } });
@@ -95,14 +98,19 @@ function initStage() {
 }
 
 async function init() {
-  $("#chips").innerHTML = ["Todo", ...CATEGORIES].map(c => `<button class="chip" data-cat="${c}">${c}</button>`).join("");
-  $("#chips").addEventListener("click", e => { if (e.target.dataset.cat) { cat = e.target.dataset.cat; render(); } });
-  $("#search").addEventListener("input", e => { term = e.target.value.toLowerCase(); render(); });
+  const toGrid = () => $("#grid").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("#cats").innerHTML = ["Todo", ...CATEGORIES].map(c => `<button class="cat" data-cat="${c}">${c}</button>`).join("");
+  $("#cats").addEventListener("click", e => { if (e.target.dataset.cat) { cat = e.target.dataset.cat; render(); toGrid(); } });
+  $("#search-toggle").addEventListener("click", () => { const s = $("#search"); s.hidden = !s.hidden; if (!s.hidden) s.focus(); });
+  $("#search").addEventListener("input", e => { term = e.target.value.toLowerCase(); render(); toGrid(); });
   $("#grid").addEventListener("click", e => { const c = e.target.closest(".card"); if (c) openModal(products.find(p => p.id === c.dataset.id)); });
   $("#grid").addEventListener("keydown", e => { if (e.key === "Enter") e.target.click?.(); });
   $("#modal").addEventListener("click", e => { if (e.target.id === "modal" || e.target.closest(".close")) $("#modal").close(); });
   $("#modal-body").addEventListener("click", e => { if (e.target.closest(".thumbs") && e.target.tagName === "IMG") $("#main-img").src = e.target.src; });
   $("#wa-top").href = `https://wa.me/${WHATSAPP}`;
+  const head = $("#site-head");
+  const onScroll = () => head.classList.toggle("solid", scrollY > 20);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
   try { products = await listProducts(); render(); initStage(); }
   catch (e) { console.error(e); $("#grid").innerHTML = `<p class="empty">No pudimos cargar los productos. Revisa tu conexión e intenta de nuevo.</p>`; }
 }
