@@ -1,11 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 
-export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);          // panel admin (con sesión)
+// cliente público para la tienda: nunca usa la sesión guardada del admin, así un token vencido no la rompe
+const pub = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "daurel-public" } });
 const BUCKET = "products";
 
 export async function listProducts({ onlyActive = true } = {}) {
-  let q = sb.from("products").select("*").order("created_at", { ascending: false });
+  let q = (onlyActive ? pub : sb).from("products").select("*").order("created_at", { ascending: false });
   if (onlyActive) q = q.eq("active", true);
   const { data, error } = await q;
   if (error) throw error;
