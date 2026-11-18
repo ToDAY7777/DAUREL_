@@ -156,7 +156,16 @@ async function init() {
   const head = $("#site-head");
   const onScroll = () => head.classList.toggle("solid", scrollY > 20);
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
-  try { products = await listProducts(); render(); initStage(); initShowcase(); }
-  catch (e) { console.error(e); $("#grid").innerHTML = `<p class="empty">No pudimos cargar los productos. Revisa tu conexión e intenta de nuevo.</p>`; }
+  try { products = await listProducts(); }
+  catch (e) {
+    console.error("No se pudo cargar productos:", e);
+    $("#grid").innerHTML = `<p class="empty">No pudimos cargar los productos. Revisa tu conexión e intenta de nuevo.<br><small>${esc(e.message || e)}</small></p>`;
+    return;
+  }
+  render();
+  // si una sección decorativa falla, el catálogo sigue funcionando
+  for (const fn of [initStage, initShowcase]) {
+    try { fn(); } catch (e) { console.error("Falló", fn.name, e); }
+  }
 }
 init();
